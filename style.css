@@ -145,8 +145,9 @@ footer {
 
 .card-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, 150px);
   gap: 20px;
+  justify-content: center;
   padding: 20px;
 }
 
@@ -155,6 +156,7 @@ footer {
   flex-direction: column;
   align-items: center;
   padding: 20px;
+  max-width: 110px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;

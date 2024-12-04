@@ -1,18 +1,32 @@
 document.addEventListener("DOMContentLoaded", () => {
   const mainContainer = document.querySelector("main");
+  const searchInput = document.querySelector("input[type='search']");
+  let allPokemon = [];
+  let pokemonPerPage = 20;
 
-  async function fetchPokemon() {
+  function calculatePokemonCount() {
+    const cardHeight = 150;
+    const cardWidth = 200;
+    const screenHeight = window.innerHeight;
+    const screenWidth = window.innerWidth;
+
+    const rows = Math.ceil(screenHeight / cardHeight) + 1;
+    const cols = Math.floor(screenWidth / cardWidth);
+    return Math.max(rows * cols, 20);
+  }
+
+  async function fetchAllPokemon() {
     try {
-      const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=20");
+      const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1000");
       const data = await response.json();
       const pokemonList = data.results;
 
-      // Fetch details for each Pokemon
-      const pokemonDetails = await Promise.all(
+      allPokemon = await Promise.all(
         pokemonList.map((pokemon) => fetch(pokemon.url).then((res) => res.json()))
       );
 
-      renderPokemonCards(pokemonDetails);
+      pokemonPerPage = calculatePokemonCount();
+      renderPokemonCards(allPokemon.slice(0, pokemonPerPage));
     } catch (error) {
       console.error("Failed to fetch Pokemon data:", error);
     }
@@ -22,29 +36,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const cardContainer = document.createElement("div");
     cardContainer.classList.add("card-container");
 
-    pokemonList.forEach((pokemon) => {
-      const card = document.createElement("div");
-      card.classList.add("pokemon-card");
-      card.style.backgroundColor = getBackgroundColor(pokemon.types);
+    cardContainer.innerHTML = pokemonList
+      .map((pokemon) => {
+        const bgColor = getBackgroundColor(pokemon.types);
+        const types = pokemon.types.map((t) => t.type.name).join(", ");
+        const name = capitalizeFirstLetter(pokemon.name);
 
-      const img = document.createElement("img");
-      img.src = pokemon.sprites.front_default;
-      img.alt = `${pokemon.name} image`;
+        return `
+          <div class="pokemon-card" style="background-color: ${bgColor}">
+            <img src="${pokemon.sprites.front_default}" alt="${name} image">
+            <h2>${name}</h2>
+            <p>Type: ${types}</p>
+          </div>
+        `;
+      })
+      .join("");
 
-      const name = document.createElement("h2");
-      name.textContent = capitalizeFirstLetter(pokemon.name);
-
-      const type = document.createElement("p");
-      type.textContent = `Type: ${pokemon.types.map((t) => t.type.name).join(", ")}`;
-
-      card.appendChild(img);
-      card.appendChild(name);
-      card.appendChild(type);
-
-      cardContainer.appendChild(card);
-    });
-
+    mainContainer.innerHTML = "";
     mainContainer.appendChild(cardContainer);
+  }
+
+  function searchPokemon() {
+    const query = searchInput.value.trim().toLowerCase();
+    if (query.length < 3) {
+      renderPokemonCards(allPokemon.slice(0, pokemonPerPage));
+      return;
+    }
+
+    const filteredPokemon = allPokemon.filter((pokemon) =>
+      pokemon.name.toLowerCase().includes(query)
+    );
+
+    renderPokemonCards(filteredPokemon);
   }
 
   function getBackgroundColor(types) {
@@ -66,12 +89,19 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const primaryType = types[0]?.type.name;
-    return typeColors[primaryType] || "#F5F5F5"; // Default to neutral color
+    return typeColors[primaryType] || "#F5F5F5";
   }
 
   function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
-  fetchPokemon();
+  searchInput.addEventListener("input", searchPokemon);
+
+  window.addEventListener("resize", () => {
+    pokemonPerPage = calculatePokemonCount();
+    renderPokemonCards(allPokemon.slice(0, pokemonPerPage));
+  });
+
+  fetchAllPokemon();
 });
