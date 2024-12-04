@@ -15,6 +15,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return Math.max(rows * cols, 20);
   }
 
+  function init() {
+    fetchAllPokemon();
+    resizeWindow();
+  }
+
   async function fetchAllPokemon() {
     try {
       const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1000");
@@ -31,6 +36,10 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Failed to fetch Pokemon data:", error);
     }
   }
+function resizeWindow() {
+  pokemonPerPage = calculatePokemonCount();
+    renderPokemonCards(allPokemon.slice(0, pokemonPerPage));
+}
 
   function renderPokemonCards(pokemonList) {
     const cardContainer = document.createElement("div");
@@ -98,10 +107,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
   searchInput.addEventListener("input", searchPokemon);
 
-  window.addEventListener("resize", () => {
-    pokemonPerPage = calculatePokemonCount();
-    renderPokemonCards(allPokemon.slice(0, pokemonPerPage));
-  });
-
-  fetchAllPokemon();
+  init();
 });
