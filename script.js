@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .join("");
 
-    if (pokemonPerPage < 1025 && cardContainer.innerHTML) { // render loading Button for more Pokemon
+    if (pokemonPerPage < 1025 && cardContainer.innerHTML && !removeCardClickEvent) { // render loading Button for more Pokemon
       const button = document.createElement("button");
       button.id = "loadButton";
       button.type = "button";
