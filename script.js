@@ -54,36 +54,30 @@ document.addEventListener("DOMContentLoaded", () => {
         const types = pokemon.types.map((t) => t.type.name).join(", ");
         const name = capitalizeFirstLetter(pokemon.name);
 
-        return `
-          <div class="pokemon-card" style="background-color: ${bgColor}">
-            <img src="${pokemon.sprites.front_default}" alt="${name} image">
-            <h2>${name}</h2>
-            <p>Type: ${types}</p>
-          </div>
-        `;
+        return cardsContentTemplate(bgColor, pokemon, name, types);
       })
       .join("");
 
-      if (pokemonPerPage < 1025 && cardContainer.innerHTML) {
-        const button = document.createElement("button");
-        button.id = "loadButton";
-        button.type = "button";
-        button.classList.add("button");
-        button.innerHTML = `
-        <span>Load More</span>
-        <div class="loadingImage"></div>
-        `;
+    if (pokemonPerPage < 1025 && cardContainer.innerHTML) { // render loading Button for more Pokemon
+      const button = document.createElement("button");
+      button.id = "loadButton";
+      button.type = "button";
+      button.classList.add("button");
+      button.innerHTML = `
+      <span>Load More</span>
+      <div class="loadingImage"></div>
+      `;
 
-        button.addEventListener("click", loadMorePokemon);
-        cardContainer.appendChild(button);
-      }
+      button.addEventListener("click", loadMorePokemon);
+      cardContainer.appendChild(button);
+    }
 
-      if (!cardContainer.innerHTML) {
-        const loadAnimation = document.createElement("div");
-        loadAnimation.id = "loadAnimation";
+    if (!cardContainer.innerHTML) {
+      const loadAnimation = document.createElement("div");
+      loadAnimation.id = "loadAnimation";
 
-        cardContainer.appendChild(loadAnimation);
-      }
+      cardContainer.appendChild(loadAnimation);
+    }
 
     mainContainer.innerHTML = "";
     mainContainer.appendChild(cardContainer);
@@ -101,13 +95,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const button = document.getElementById("loadButton");
     const container = document.getElementById("cardContainer");
     const text = button.querySelector("span");
+    const animation = button.querySelector("div")
     button.removeEventListener("click", loadMorePokemon);
     button.classList.add("loading");
-    text.style.opacity = 0;
+    text.style.display = "none";
+    animation.style.display = "block";
 
     container.appendChild(button);
 
-    await delay(2000);
+    await delay(Math.random() * (1000 - 500) + 500);
     pokemonPerPage += 20;
     renderPokemonCards(allPokemon.slice(0, pokemonPerPage));
   }
@@ -160,73 +156,186 @@ document.addEventListener("DOMContentLoaded", () => {
   searchInput.addEventListener("input", searchPokemon);
 
   function createPopup(pokemon) {
-    const popupContainer = document.createElement("div");
-    popupContainer.classList.add("popup-container");
+    const bgColor = getBackgroundColor(pokemon.types);
+    const popupOverlay = document.createElement("div");
+    const popupContent = popupContentTemplate(bgColor, pokemon, capitalizeFirstLetter);
+    popupOverlay.classList.add("popup-overlay");
   
-    const { id, name, height, weight, sprites, stats, types } = pokemon;
-    const typeNames = types.map((type) => capitalizeFirstLetter(type.type.name)).join(", ");
+    popupOverlay.innerHTML = popupContent;
   
-      const statsList = stats
-      .map(
-        (stat) => `
-          <div class="stat-item">
-            <span>${capitalizeFirstLetter(stat.stat.name)}:</span>
-            <div class="stat-bar">
-              <div style="width: ${stat.base_stat}%;"></div>
-            </div>
-            <span>${stat.base_stat}</span>
-          </div>
-        `
-      )
-      .join("");
+    fetchPokemonDescription(pokemon.name, popupOverlay);
+
+    const imageContainer = popupOverlay.querySelector("#popupImageContainer");
+    const loadAnimation = popupOverlay.querySelector("#loadAnimation");
+    const image = imageContainer.querySelector("img");
   
-      popupContainer.innerHTML = `
-      <div class="popup-content">
-        <div class="popup-header">
-          <h2>#${String(id).padStart(3, "0")} ${capitalizeFirstLetter(name)}</h2>
-          <button class="popup-close">&times;</button>
-        </div>
-        <div class="popup-body">
-          <div class="popup-about">
-            <img src="${sprites.front_default}" alt="${name}">
-            <div class="pokemon-info">
-              <p><strong>Type:</strong> ${typeNames}</p>
-              <p><strong>Height:</strong> ${(height / 10).toFixed(1)} m</p>
-              <p><strong>Weight:</strong> ${(weight / 10).toFixed(1)} kg</p>
-            </div>
-          </div>
-        </div>
-        <div class="tabs">
-          <div class="tab active" data-tab="about">About</div>
-          <div class="tab" data-tab="stats">Base Stats</div>
-          <div class="tab" data-tab="moves">Moves</div>
-        </div>
-      </div>
-    `;
+    loadAnimation.style.width = "50px";
+    loadAnimation.style.height = "50px";
   
-    document.body.appendChild(popupContainer);
-    
-    popupContainer.querySelector(".popup-close").addEventListener("click", () => {
-      document.body.removeChild(popupContainer);
+    image.onload = () => {
+      loadAnimation.style.display = "none";
+      image.style.display = "block";
+    };
+  
+    image.onerror = () => {
+      loadAnimation.style.display = "none";
+      imageContainer.innerHTML += `<p>Image not available</p>`;
+    };
+  
+    popupOverlay.querySelectorAll(".popup-tab-btn").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        popupOverlay.querySelectorAll(".popup-tab-btn").forEach((btn) =>
+          btn.classList.remove("active")
+        );
+        event.target.classList.add("active");
+        updatePopupTabContent(pokemon, event.target.dataset.tab);
+      });
+    });
+
+    popupOverlay.querySelector(".popup-close-btn").addEventListener("click", () => {
+      closePopup(popupOverlay);
+    });
+
+    popupOverlay.addEventListener("click", (event) => {
+      if (event.target === popupOverlay) {
+        closePopup(popupOverlay);
+      }
+    });
+
+    const leftButton = popupOverlay.querySelector(".popup-nav-btn.left");
+    const rightButton = popupOverlay.querySelector(".popup-nav-btn.right");
+  
+    leftButton.addEventListener("click", () => {
+      navigateToPokemon(pokemon, -1);
     });
   
-    const tabs = popupContainer.querySelectorAll(".tab");
-    const tabContents = popupContainer.querySelectorAll(".popup-body > div");
-    
-    tabs.forEach((tab) =>
-      tab.addEventListener("click", () => {
-        tabs.forEach((t) => t.classList.remove("active"));
-        tabContents.forEach((content) => content.classList.remove("active"));
+    rightButton.addEventListener("click", () => {
+      navigateToPokemon(pokemon, 1);
+    });
 
-        tab.classList.add("active");
-        const targetContent = popupContainer.querySelector(`.popup-${tab.dataset.tab}`);
-        targetContent.classList.add("active");
+    const handleKeyNavigation = (event) => {
+      if (event.key === "ArrowLeft") {
+        navigateToPokemon(pokemon, -1);
+      } else if (event.key === "ArrowRight") {
+        navigateToPokemon(pokemon, 1);
+      } else if (event.key === "Escape") {
+        closePopup(popupOverlay);
+      }
+    };
+  
+    document.addEventListener("keydown", handleKeyNavigation);
+  
+    popupOverlay.addEventListener("remove", () => {
+      document.removeEventListener("keydown", handleKeyNavigation);
+    });
+  
+    document.body.appendChild(popupOverlay);
+    document.body.style.overflow = "hidden";
+  }
+
+  function fetchPokemonDescription(pokemonName, popupOverlay) {
+    const apiUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokemonName}`;
+  
+    fetch(apiUrl)
+      .then((response) => response.json())
+      .then((data) => {
+        const englishEntry = data.flavor_text_entries.find(
+          (entry) => entry.language.name === "en"
+        );
+  
+        const description = englishEntry
+          ? englishEntry.flavor_text.replace(/\s+/g, " ")
+          : "No description available for this Pokémon.";
+  
+        const descriptionElement = popupOverlay.querySelector(".pokemon-description");
+        descriptionElement.textContent = description;
       })
-    );
+      .catch((error) => {
+        console.error("Error fetching Pokémon description:", error);
+        const descriptionElement = popupOverlay.querySelector(".pokemon-description");
+        descriptionElement.textContent = "Failed to load description.";
+      });
+  }
 
-    popupContainer.style.display = "flex";
+  function navigateToPokemon(currentPokemon, direction) {
+    const currentIndex = allPokemon.findIndex((p) => p.name === currentPokemon.name);
+    let newIndex = currentIndex + direction;
+  
+    if (newIndex < 0) {
+      newIndex = allPokemon.length - 1;
+    } else if (newIndex >= allPokemon.length) {
+      newIndex = 0;
+    }
+  
+    const newPokemon = allPokemon[newIndex];
+  
+    document.querySelector(".popup-overlay").remove();
+  
+    createPopup(newPokemon);
   }
   
+  function closePopup(popupOverlay) {
+    document.body.style.overflow = "";
+    popupOverlay.remove();
+  }
+  
+  function navigateToPokemon(currentPokemon, direction) {
+    const currentIndex = allPokemon.findIndex((p) => p.name === currentPokemon.name);
+    let newIndex = currentIndex + direction;
+  
+    if (newIndex < 0) {
+      newIndex = allPokemon.length - 1;
+    } else if (newIndex >= allPokemon.length) {
+      newIndex = 0;
+    }
+  
+    const newPokemon = allPokemon[newIndex];
+  
+    document.querySelector(".popup-overlay").remove();
+  
+    createPopup(newPokemon);
+  }
+  
+  function closePopup(popupOverlay) {
+    document.body.style.overflow = "";
+    popupOverlay.remove();
+  }
+  
+  function closePopup(popupOverlay) {
+    document.body.style.overflow = "";
+    popupOverlay.remove();
+  }
+
+  function closePopup(popupOverlay) {
+    document.body.style.overflow = "";
+    popupOverlay.remove();
+  }  
+
+  function updatePopupTabContent(pokemon, tab) {
+    const tabContent = document.querySelector("#popup-tab-content");
+    if (tab === "about") {
+      tabContent.innerHTML = `
+        <h3>About</h3>
+        <p>Height: ${(pokemon.height / 10).toFixed(1)} m</p>
+        <p>Weight: ${(pokemon.weight / 10).toFixed(1)} kg</p>
+      `;
+    } else if (tab === "stats") {
+      tabContent.innerHTML = `
+        <h3>Base Stats</h3>
+        <ul>
+          ${pokemon.stats.map(stat => `<li>${capitalizeFirstLetter(stat.stat.name)}: ${stat.base_stat}</li>`).join("")}
+        </ul>
+      `;
+    } else if (tab === "abilities") {
+      tabContent.innerHTML = `
+        <h3>Abilities</h3>
+        <ul>
+          ${pokemon.abilities.map(ability => `<li>${capitalizeFirstLetter(ability.ability.name)}</li>`).join("")}
+        </ul>
+      `;
+    }
+  }
+
   function addCardClickEvent(filteredPokemon) {
     if (filteredPokemon) {
       document.querySelectorAll(".pokemon-card").forEach((card, index) => {
