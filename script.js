@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (query.length < 3) {
       renderPokemonCards(allPokemon.slice(0, pokemonPerPage));
       return;
-    } else if (query.length <=3) {
+    } else if (query.length >=3) {
       removeCardClickEvent = true;
     }
 
