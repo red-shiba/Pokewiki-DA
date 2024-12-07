@@ -10,12 +10,6 @@ body {
   flex-direction: column;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
 header {
   background-color: #fff;
   padding: 10px 0;
@@ -32,6 +26,7 @@ header {
 .header-logo {
   display: flex;
   align-items: center;
+  text-decoration: none;
 }
 
 .header-logo img {
@@ -84,6 +79,7 @@ footer {
   display: flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
 }
 
 .footer-logo img {
@@ -407,6 +403,17 @@ button:hover {
 
 .popup-nav-btn:hover {
   background-color: rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 370px) {
+  .popup-nav-btn.left {
+    top: 345px;
+  }
+
+  .popup-nav-btn.right {
+    top: 345px;
+  }
+
 }
 
 .type-icon {
