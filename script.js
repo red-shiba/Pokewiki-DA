@@ -119,12 +119,24 @@ document.addEventListener("DOMContentLoaded", () => {
       removeCardClickEvent = true;
     }
 
-    const filteredPokemon = allPokemon.filter((pokemon) =>
+    let filteredPokemon = allPokemon.filter((pokemon) =>
       pokemon.name.toLowerCase().includes(query)
     );
 
+    console.log(cardContainer);
+
     renderPokemonCards(filteredPokemon, removeCardClickEvent);
     addCardClickEvent(filteredPokemon);
+
+    if (document.getElementById("loadAnimation")) {
+      const emptySearch = document.createElement("div");
+      emptySearch.id = "emptySearch";
+      emptySearch.innerHTML = `<span>Leider keine Pokemon Gefunden</span>`;
+      const loadAnimation = document.getElementById("loadAnimation")
+      loadAnimation.style.display = "none";
+
+      cardContainer.appendChild(emptySearch);
+    }
   }
 
   function getBackgroundColor(types) {

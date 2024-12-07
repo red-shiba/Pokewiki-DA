@@ -3,7 +3,6 @@ function cardsContentTemplate(bgColor, pokemon, name, types) {
           <div class="pokemon-card" style="background-color: ${bgColor}">
             <img class="pokemon-card-img" src="${pokemon.sprites.front_default}" alt="${name} image">
             <h2>${name} <img class="type-icon-card" src="./assets/type_icons_png/${pokemon.types[0].type.name}.png" alt""></h2>
-            <p>Type: ${types}</p>
           </div>
         `;
 };
